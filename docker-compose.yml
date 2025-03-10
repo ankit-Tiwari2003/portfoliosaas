@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # Next.js application
+  nextjs:
+    build:
+      context: ./portfolio-nextjs
+      dockerfile: Dockerfile
+    container_name: portfolio-nextjs
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./portfolio-nextjs:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/portfolio?authSource=admin
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=your-secret-key-here-change-in-production
+    depends_on:
+      - mongodb
+    networks:
+      - portfolio-network
+    command: npm run dev
+
+  # MongoDB service
+  mongodb:
+    image: mongo:latest
+    container_name: portfolio-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - portfolio-network
+  
+  # MongoDB UI client
+  mongo-express:
+    image: mongo-express:latest
+    container_name: portfolio-mongo-express
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=password
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+    depends_on:
+      - mongodb
+    networks:
+      - portfolio-network
+
+networks:
+  portfolio-network:
+    driver: bridge
+
+volumes:
+  mongodb-data:
+    driver: local
